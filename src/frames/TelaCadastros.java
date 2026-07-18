@@ -1,31 +1,53 @@
 package frames;
 
-import dao.JazigoDAO;
-import dao.TitularDAO;
-import dao.UsuarioDAO;
-import thanatosdb.Jazigo;
-import thanatosdb.Titular;
-import thanatosdb.Usuario;
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JSeparator;
+import javax.swing.JTextField;
+import service.TitularService;
+import service.UsuarioService;
+import thanatosdb.Jazigo;
 
-public class TelaCadastros extends javax.swing.JFrame {
+public class TelaCadastros extends JFrame {
 
-    private JComboBox<JazigoItem> cmbJazigo;
-    private JComboBox<String> cmbNivel;
-    private JPasswordField txtSenha;
+    private UsuarioService usuarioService;
+    private TitularService titularService;
+
+    private JTextField txtNome;
+    private JTextField txtCpf;
+    private JTextField txtNasc;
+    private JTextField txtTelefone;
     private JTextField txtLogin;
-    private JTextField txtNome, txtCpf, txtNasc, txtTelefone;
-    private JLabel lblSenha, lblLogin;
+    private JPasswordField txtSenha;
+
     private JComboBox<String> cmbTipo;
+    private JComboBox<String> cmbNivel;
+    private JComboBox<JazigoItem> cmbJazigo;
+
+    private JLabel lblLogin;
+    private JLabel lblSenha;
+    private JLabel lblNivel;
+    private JLabel lblJazigo;
 
     public TelaCadastros() {
         initComponents();
         configurarDesign();
+
+        this.usuarioService = new UsuarioService();
         carregarJazigosDisponiveis();
+
+        this.titularService = new TitularService();
     }
 
     private void configurarDesign() {
@@ -38,15 +60,18 @@ public class TelaCadastros extends javax.swing.JFrame {
     }
 
     private void carregarJazigosDisponiveis() {
-        JazigoDAO dao = new JazigoDAO();
-        List<Jazigo> livres = dao.listarJazigosLivres();
-
         cmbJazigo.removeAllItems();
-        // Item "vazio"
         cmbJazigo.addItem(new JazigoItem(null, "- Nenhum -"));
 
-        for (Jazigo j : livres) {
-            cmbJazigo.addItem(new JazigoItem(j, j.getNumero() + " (" + j.getTipo() + ")"));
+        try {
+            dao.JazigoDAO jDao = new dao.JazigoDAO();
+            List<Jazigo> livres = jDao.listarJazigosLivres();
+            for (Jazigo j : livres) {
+                String label = "Nº: " + j.getNumero() + " (" + j.getTipo() + ")";
+                cmbJazigo.addItem(new JazigoItem(j, label));
+            }
+        } catch (Exception e) {
+            System.out.println("Erro ao carregar jazigos: " + e.getMessage());
         }
     }
 
@@ -93,197 +118,195 @@ public class TelaCadastros extends javax.swing.JFrame {
         content.add(lblTitulo);
 
         JPanel panelForm = new JPanel();
-        panelForm.setBounds(30, 70, 570, 450); // Aumentei um pouco a altura
+        panelForm.setBounds(30, 70, 570, 460);
         panelForm.setBackground(Color.WHITE);
         panelForm.setBorder(BorderFactory.createTitledBorder("Dados Cadastrais"));
         panelForm.setLayout(null);
         content.add(panelForm);
 
         JLabel lblNome = new JLabel("Nome Completo:");
-        lblNome.setBounds(30, 30, 150, 20);
+        lblNome.setBounds(20, 30, 120, 25);
         panelForm.add(lblNome);
+
         txtNome = new JTextField();
-        txtNome.setBounds(30, 50, 500, 30);
+        txtNome.setBounds(150, 30, 380, 25);
         panelForm.add(txtNome);
 
+        JLabel lblTipo = new JLabel("Tipo de Cadastro:");
+        lblTipo.setBounds(20, 70, 120, 25);
+        panelForm.add(lblTipo);
+
+        cmbTipo = new JComboBox<>(new String[]{"- Selecione -", "Titular (Cliente)", "Funcionário"});
+        cmbTipo.setBounds(150, 70, 180, 25);
+        panelForm.add(cmbTipo);
+
         JLabel lblCpf = new JLabel("CPF:");
-        lblCpf.setBounds(30, 90, 100, 20);
+        lblCpf.setBounds(20, 110, 120, 25);
         panelForm.add(lblCpf);
+
         txtCpf = new JTextField();
-        txtCpf.setBounds(30, 110, 150, 30);
+        txtCpf.setBounds(150, 110, 180, 25);
         panelForm.add(txtCpf);
 
-        JLabel lblNasc = new JLabel("Nascimento (DD-MM-AAAA):");
-        lblNasc.setBounds(200, 90, 180, 20);
+        JLabel lblNasc = new JLabel("Nascimento:");
+        lblNasc.setBounds(20, 150, 120, 25);
         panelForm.add(lblNasc);
+
         txtNasc = new JTextField();
-        txtNasc.setBounds(200, 110, 150, 30);
+        txtNasc.setBounds(150, 150, 180, 25);
         panelForm.add(txtNasc);
 
         JLabel lblTel = new JLabel("Telefone:");
-        lblTel.setBounds(370, 90, 100, 20);
+        lblTel.setBounds(20, 190, 120, 25);
         panelForm.add(lblTel);
+
         txtTelefone = new JTextField();
-        txtTelefone.setBounds(370, 110, 160, 30);
+        txtTelefone.setBounds(150, 190, 180, 25);
         panelForm.add(txtTelefone);
 
-        JLabel lblTipo = new JLabel("Tipo de Cadastro:");
-        lblTipo.setFont(new Font("SansSerif", Font.BOLD, 12));
-        lblTipo.setBounds(30, 160, 150, 20);
-        panelForm.add(lblTipo);
+        JSeparator separator = new JSeparator();
+        separator.setBounds(20, 235, 530, 10);
+        panelForm.add(separator);
 
-        String[] tipos = {"- Selecione -", "Titular (Cliente)", "Usuário (Funcionário)"};
-        cmbTipo = new JComboBox<>(tipos);
-        cmbTipo.setBounds(30, 180, 200, 30);
-        panelForm.add(cmbTipo);
-
+        // Componentes do bloco de Funcionário
         lblLogin = new JLabel("Login de Acesso:");
-        lblLogin.setBounds(280, 160, 150, 20);
-        lblLogin.setVisible(false);
+        lblLogin.setBounds(20, 250, 120, 25);
         panelForm.add(lblLogin);
+
         txtLogin = new JTextField();
-        txtLogin.setBounds(280, 180, 200, 30);
-        txtLogin.setVisible(false);
+        txtLogin.setBounds(150, 250, 180, 25);
         panelForm.add(txtLogin);
 
-        JSeparator sep = new JSeparator();
-        sep.setBounds(30, 230, 500, 10);
-        panelForm.add(sep);
+        lblSenha = new JLabel("Definir Senha:");
+        lblSenha.setBounds(20, 290, 120, 25);
+        panelForm.add(lblSenha);
 
-        JLabel lblJazigo = new JLabel("Compra de Jazigo:");
-        lblJazigo.setBounds(30, 250, 150, 20);
+        txtSenha = new JPasswordField();
+        txtSenha.setBounds(150, 290, 180, 25);
+        panelForm.add(txtSenha);
+
+        lblNivel = new JLabel("Cargo / Nível:");
+        lblNivel.setBounds(20, 330, 120, 25);
+        panelForm.add(lblNivel);
+
+        cmbNivel = new JComboBox<>(new String[]{"- Escolha -", "ADMIN", "VENDEDOR", "COVEIRO"});
+        cmbNivel.setBounds(150, 330, 180, 25);
+        panelForm.add(cmbNivel);
+
+        // Componentes do bloco de Titular
+        lblJazigo = new JLabel("Compra de Jazigo:");
+        lblJazigo.setBounds(20, 250, 120, 25);
         panelForm.add(lblJazigo);
 
         cmbJazigo = new JComboBox<>();
-        cmbJazigo.setBounds(30, 270, 200, 30);
-        cmbJazigo.setEnabled(false);
+        cmbJazigo.setBounds(150, 250, 250, 25);
         panelForm.add(cmbJazigo);
 
-        JLabel lblNivel = new JLabel("Cargo / Nível:");
-        lblNivel.setBounds(280, 250, 150, 20);
-        panelForm.add(lblNivel);
-        cmbNivel = new JComboBox<>(new String[]{"- Escolha -", "ADMIN", "VENDEDOR", "COVEIRO"});
-        cmbNivel.setBounds(280, 270, 200, 30);
-        cmbNivel.setEnabled(false);
-        panelForm.add(cmbNivel);
-
-        lblSenha = new JLabel("Definir Senha:");
-        lblSenha.setBounds(280, 310, 100, 20);
+        // Oculta os blocos condicionais inicialmente
+        lblLogin.setVisible(false);
+        txtLogin.setVisible(false);
         lblSenha.setVisible(false);
-        panelForm.add(lblSenha);
-        txtSenha = new JPasswordField();
-        txtSenha.setBounds(280, 330, 200, 30);
         txtSenha.setVisible(false);
-        panelForm.add(txtSenha);
+        lblNivel.setVisible(false);
+        cmbNivel.setVisible(false);
+        lblJazigo.setVisible(false);
+        cmbJazigo.setVisible(false);
 
+        // Controle de visibilidade da tela
         cmbTipo.addActionListener(e -> {
-            String selecionado = (String) cmbTipo.getSelectedItem();
+            String selecionado = cmbTipo.getSelectedItem().toString();
+            boolean isFunc = selecionado.equals("Funcionário");
+            boolean isTitular = selecionado.equals("Titular (Cliente)");
 
-            if ("Titular (Cliente)".equals(selecionado)) {
-                cmbJazigo.setEnabled(true);
-                cmbNivel.setEnabled(false);
-                lblSenha.setVisible(false);
-                txtSenha.setVisible(false);
-                lblLogin.setVisible(false);
-                txtLogin.setVisible(false);
-            } else if ("Usuário (Funcionário)".equals(selecionado)) {
-                cmbJazigo.setEnabled(false);
-                cmbNivel.setEnabled(true);
-                lblSenha.setVisible(true);
-                txtSenha.setVisible(true);
-                lblLogin.setVisible(true);
-                txtLogin.setVisible(true);
-            } else {
-                cmbJazigo.setEnabled(false);
-                cmbNivel.setEnabled(false);
-            }
+            lblLogin.setVisible(isFunc);
+            txtLogin.setVisible(isFunc);
+            lblSenha.setVisible(isFunc);
+            txtSenha.setVisible(isFunc);
+            lblNivel.setVisible(isFunc);
+            cmbNivel.setVisible(isFunc);
+
+            lblJazigo.setVisible(isTitular);
+            cmbJazigo.setVisible(isTitular);
+            lblCpf.setVisible(isTitular);
+            txtCpf.setVisible(isTitular);
+            lblNasc.setVisible(isTitular);
+            txtNasc.setVisible(isTitular);
+            lblTel.setVisible(isTitular);
+            txtTelefone.setVisible(isTitular);
         });
 
         JButton btnSalvar = new JButton("SALVAR");
-        btnSalvar.setBounds(30, 390, 150, 35);
+        btnSalvar.setBounds(220, 390, 130, 35);
         btnSalvar.setBackground(new Color(98, 0, 238));
         btnSalvar.setForeground(Color.WHITE);
-
         btnSalvar.addActionListener(e -> salvarCadastro());
         panelForm.add(btnSalvar);
     }
 
+    // Método refatorado 
     private void salvarCadastro() {
-        try {
-            String tipo = (String) cmbTipo.getSelectedItem();
-            String nome = txtNome.getText().trim();
-            String cpf = txtCpf.getText().trim();
-            String nascStr = txtNasc.getText().trim();
-            String telefone = txtTelefone.getText().trim();
+        String tipo = cmbTipo.getSelectedItem().toString();
+        String nome = txtNome.getText().trim();
 
-            if (nome.isEmpty() || tipo.equals("- Selecione -")) {
-                JOptionPane.showMessageDialog(this, "Preencha nome e selecione o tipo!");
-                return;
-            }
-
-            if ("Usuário (Funcionário)".equals(tipo)) {
-                // Lógica de Salvar Usuário (Mantida igual)
+        if (tipo.equals("Funcionário")) {
+            try {
                 String login = txtLogin.getText().trim();
-                String senha = new String(txtSenha.getPassword());
-                String cargo = (String) cmbNivel.getSelectedItem();
+                String senha = new String(txtSenha.getPassword()).trim();
+                String cargo = cmbNivel.getSelectedItem().toString();
 
-                if (login.isEmpty() || senha.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Preencha login e senha!");
-                    return;
-                }
+                usuarioService.cadastrarUsuario(nome, login, senha, cargo);
 
-                Usuario u = new Usuario(nome, login, senha, cargo);
-                UsuarioDAO uDao = new UsuarioDAO();
-                uDao.cadastrar(u);
-                JOptionPane.showMessageDialog(this, "Funcionário cadastrado!");
+                JOptionPane.showMessageDialog(this, "Funcionário cadastrado com sucesso!");
 
-            } else {
+                txtNome.setText("");
+                txtLogin.setText("");
+                txtSenha.setText("");
+                cmbNivel.setSelectedIndex(0);
+                cmbTipo.setSelectedIndex(0);
 
-                LocalDate dataNascimento;
-                try {
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Erro ao salvar: " + ex.getMessage());
+            }
+        } else if (tipo.equals("Titular (Cliente)")) {
+            try {
+                String cpf = txtCpf.getText().trim();
+                String tel = txtTelefone.getText().trim();
+                String nascStr = txtNasc.getText().trim();
 
-                    if (nascStr.contains("/")) {
-                        DateTimeFormatter brFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                        dataNascimento = LocalDate.parse(nascStr, brFormat);
-                    } else {
-
-                        dataNascimento = LocalDate.parse(nascStr);
-                    }
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, "Data inválida! Use o formato DD/MM/AAAA (ex: 25/12/1990) ou AAAA-MM-DD.");
-                    return;
-                }
-
-                Titular t = new Titular(nome, cpf, telefone, dataNascimento);
-                TitularDAO tDao = new TitularDAO();
-
-                int idTitular = tDao.cadastrar(t);
-
+                // Captura o ID do jazigo (se houver algum selecionado)
                 JazigoItem itemJazigo = (JazigoItem) cmbJazigo.getSelectedItem();
-                if (itemJazigo != null && itemJazigo.jazigo != null && idTitular > 0) {
-                    JazigoDAO jDao = new JazigoDAO();
-                    jDao.comprar(itemJazigo.jazigo.getIdJazigo(), idTitular);
+                Integer idJazigo = null;
+                if (itemJazigo != null && itemJazigo.jazigo != null) {
+                    idJazigo = itemJazigo.jazigo.getIdJazigo();
+                }
+
+                // Consome a camada Service!
+                titularService.cadastrarTitularComJazigo(nome, cpf, tel, nascStr, idJazigo);
+
+                if (idJazigo != null) {
                     JOptionPane.showMessageDialog(this, "Titular cadastrado e Jazigo vinculado!");
                 } else {
                     JOptionPane.showMessageDialog(this, "Titular cadastrado (sem jazigo)!");
                 }
+
+                txtNome.setText("");
+                txtCpf.setText("");
+                txtNasc.setText("");
+                txtTelefone.setText("");
+                cmbTipo.setSelectedIndex(0);
+                carregarJazigosDisponiveis();
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Erro ao salvar: " + ex.getMessage());
             }
-
-            txtNome.setText("");
-            txtCpf.setText("");
-            txtNasc.setText("");
-            carregarJazigosDisponiveis();
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao salvar: " + ex.getMessage());
-            ex.printStackTrace();
         }
+
     }
 
-    class JazigoItem {
+    private class JazigoItem {
 
-        Jazigo jazigo;
-        String label;
+        final Jazigo jazigo;
+        final String label;
 
         public JazigoItem(Jazigo jazigo, String label) {
             this.jazigo = jazigo;

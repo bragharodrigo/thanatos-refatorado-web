@@ -1,18 +1,37 @@
 package frames;
 
-import dao.SetorDAO;
-import thanatosdb.Setor;
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridLayout;
 import java.util.List;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import service.SetorService;
+import thanatosdb.Setor;
 
-public class TelaBlocos extends javax.swing.JFrame {
+public class TelaBlocos extends JFrame {
+
+    private SetorService setorService;
 
     private JPanel panelCards;
+    private JTextField txtNome;
+    private JTextField txtDesc;
+    private JButton btnSalvar;
 
     public TelaBlocos() {
         initComponents();
         configurarDesign();
+
+        this.setorService = new SetorService();
+
         carregarBlocosDoBanco();
     }
 
@@ -26,15 +45,14 @@ public class TelaBlocos extends javax.swing.JFrame {
     }
 
     private void carregarBlocosDoBanco() {
-        SetorDAO dao = new SetorDAO();
-        List<Setor> lista = dao.listar();
-
         if (panelCards != null) {
             panelCards.removeAll();
 
+            List<Setor> lista = setorService.listarSetores();
+
             for (Setor s : lista) {
-                int porcentagem = dao.getPorcentagemOcupacao(s.getIdSetor());
-                criarCardBloco(panelCards, "Setor " + s.getNomeSetor(), porcentagem, s.getDescricao());
+                int porcentagem = setorService.calcularOcupacao(s.getIdSetor());
+                criarCardBloco(panelCards, s.getNomeSetor(), porcentagem, s.getDescricao());
             }
 
             panelCards.revalidate();
@@ -95,7 +113,7 @@ public class TelaBlocos extends javax.swing.JFrame {
         lblNome.setBounds(20, 35, 150, 25);
         panelCadastro.add(lblNome);
 
-        JTextField txtNome = new JTextField();
+        txtNome = new JTextField();
         txtNome.setBounds(160, 35, 50, 25);
         panelCadastro.add(txtNome);
 
@@ -103,37 +121,18 @@ public class TelaBlocos extends javax.swing.JFrame {
         lblDesc.setBounds(220, 35, 80, 25);
         panelCadastro.add(lblDesc);
 
-        JTextField txtDesc = new JTextField();
+        txtDesc = new JTextField();
         txtDesc.setBounds(290, 35, 120, 25);
         panelCadastro.add(txtDesc);
 
-        JButton btnSalvar = new JButton("ADICIONAR");
+        btnSalvar = new JButton("ADICIONAR");
         btnSalvar.setBounds(430, 35, 110, 25);
         btnSalvar.setBackground(new Color(98, 0, 238));
         btnSalvar.setForeground(Color.WHITE);
 
-        btnSalvar.addActionListener(e -> {
-            try {
-                String nome = txtNome.getText().toUpperCase().trim();
-                String desc = txtDesc.getText();
-
-                if (nome.length() != 1) {
-                    JOptionPane.showMessageDialog(this, "O setor deve ser apenas 1 letra (Ex: F, G, H).");
-                    return;
-                }
-
-                Setor novo = new Setor(nome, desc);
-                SetorDAO dao = new SetorDAO();
-                dao.cadastrar(novo);
-
-                JOptionPane.showMessageDialog(this, "Setor " + nome + " criado!");
-                txtNome.setText("");
-                txtDesc.setText("");
-
-                carregarBlocosDoBanco();
-
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage());
+        btnSalvar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSalvarActionPerformed(evt);
             }
         });
         panelCadastro.add(btnSalvar);
@@ -145,16 +144,33 @@ public class TelaBlocos extends javax.swing.JFrame {
         content.add(lblLista);
 
         panelCards = new JPanel();
-
         panelCards.setLayout(new GridLayout(0, 1, 0, 10));
         panelCards.setBackground(new Color(230, 230, 230));
 
         JScrollPane scrollCards = new JScrollPane(panelCards);
         scrollCards.setBounds(30, 220, 570, 320);
         scrollCards.setBorder(null);
-
         scrollCards.getVerticalScrollBar().setUnitIncrement(16);
         content.add(scrollCards);
+    }
+
+    private void btnSalvarActionPerformed(java.awt.event.ActionEvent evt) {
+        try {
+            String nome = txtNome.getText();
+            String desc = txtDesc.getText();
+
+            setorService.cadastrarSetor(nome, desc);
+
+            JOptionPane.showMessageDialog(this, "Setor " + nome.toUpperCase().trim() + " criado com sucesso!");
+
+            txtNome.setText("");
+            txtDesc.setText("");
+
+            carregarBlocosDoBanco();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Erro: " + e.getMessage());
+        }
     }
 
     private void criarCardBloco(JPanel container, String nome, int porcentagem, String descricao) {

@@ -11,6 +11,8 @@ import java.util.List;
 
 public class TelaSepultamento extends javax.swing.JFrame {
 
+    private service.FalecidoService falecidoService;
+
     private JTextField txtNome;
     private JTextField txtCpf;
     private JTextField txtNasc;
@@ -22,6 +24,8 @@ public class TelaSepultamento extends javax.swing.JFrame {
         initComponents();
         configurarDesign();
         carregarJazigos();
+
+        this.falecidoService = new service.FalecidoService();
     }
 
     private void configurarDesign() {
@@ -169,44 +173,25 @@ public class TelaSepultamento extends javax.swing.JFrame {
     }
 
     private void realizarSepultamento() {
-        if (cmbJazigo.getSelectedIndex() <= 0) {
-            JOptionPane.showMessageDialog(this, "Selecione um jazigo válido.");
-            return;
-        }
-
-        Jazigo jazigoSelecionado = (Jazigo) cmbJazigo.getSelectedItem();
-
-        String nome = txtNome.getText();
-        String cpf = txtCpf.getText();
-        String dataNascTexto = txtNasc.getText();
-        String dataSepTexto = txtDataSep.getText();
-
-        if (nome.isEmpty() || cpf.isEmpty() || dataSepTexto.isEmpty() || dataNascTexto.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Preencha todos os campos obrigatórios.");
-            return;
-        }
-
-        String dataNascSQL = "";
-        String dataSepSQL = "";
-
         try {
-            SimpleDateFormat sdfEntrada = new SimpleDateFormat("dd/MM/yyyy");
-            SimpleDateFormat sdfSaida = new SimpleDateFormat("yyyy-MM-dd");
+            String nome = txtNome.getText().trim();
+            String cpf = txtCpf.getText().trim();
+            String dataNasc = txtNasc.getText().trim();
+            String dataSep = txtDataSep.getText().trim();
 
-            dataNascSQL = sdfSaida.format(sdfEntrada.parse(dataNascTexto));
-            dataSepSQL = sdfSaida.format(sdfEntrada.parse(dataSepTexto));
-        } catch (ParseException ex) {
-            JOptionPane.showMessageDialog(this, "Data inválida! Use dd/mm/aaaa");
-            return;
-        }
+            int idJazigo = -1;
+            if (cmbJazigo.getSelectedIndex() > 0) {
+                thanatosdb.Jazigo j = (thanatosdb.Jazigo) cmbJazigo.getSelectedItem();
+                idJazigo = j.getIdJazigo();
+            }
 
-        FalecidoDAO dao = new FalecidoDAO();
-        boolean sucesso = dao.registrarSepultamento(nome, cpf, dataNascSQL, dataSepSQL, jazigoSelecionado.getIdJazigo());
+            falecidoService.registrarSepultamento(nome, cpf, dataNasc, dataSep, idJazigo);
 
-        if (sucesso) {
             JOptionPane.showMessageDialog(this, "Sepultamento registrado com sucesso!");
             limparCampos();
-            carregarJazigos();
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage());
         }
     }
 

@@ -9,12 +9,16 @@ import java.awt.*;
 
 public class TelaJazigos extends javax.swing.JFrame {
 
+    private service.JazigoService jazigoService;
+
     private JTable tabela;
     private DefaultTableModel tableModel;
 
     public TelaJazigos() {
         initComponents();
         configurarDesign();
+
+        this.jazigoService = new service.JazigoService();
     }
 
     private void configurarDesign() {
@@ -187,38 +191,27 @@ public class TelaJazigos extends javax.swing.JFrame {
 
         btnSalvar.addActionListener(e -> {
             try {
-
+                // 1. Captura os dados 
                 String numero = txtNum.getText();
-                String tipo = (String) cmbTipo.getSelectedItem();
-                String status = (String) cmbStatus.getSelectedItem();
+                String tipo = cmbTipo.getSelectedItem().toString();
+                String status = cmbStatus.getSelectedItem().toString();
 
-                int idSetor = cmbSetor.getSelectedIndex() + 1;
+                int idSetor = cmbSetor.getSelectedIndex();
 
-                if (numero.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Por favor, preencha o número do jazigo.");
-                    return;
-                }
+                // 2. TRansferindo responsabilidade para a camada Serviços
+                jazigoService.cadastrarJazigo(numero, tipo, status, idSetor);
 
-                Jazigo novoJazigo = new Jazigo();
-                novoJazigo.setNumero(numero);
-                novoJazigo.setTipo(tipo);
-                novoJazigo.setStatus(status);
-                novoJazigo.setIdSetor(idSetor);
+                // 3. Noticação de salvamento 
+                javax.swing.JOptionPane.showMessageDialog(this, "Jazigo Salvo com Sucesso!");
 
-                JazigoDAO dao = new JazigoDAO();
-                dao.cadastrar(novoJazigo);
-
-                JOptionPane.showMessageDialog(this, "Jazigo Salvo com Sucesso!");
-
+                // Limpa os campos da tela
                 txtNum.setText("");
                 cmbSetor.setSelectedIndex(0);
-                cmbTipo.setSelectedIndex(0);
-                cmbStatus.setSelectedIndex(0);
 
-                preencherTabela("Todos");
-
+                // preencherTabela();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Erro ao salvar: " + ex.getMessage());
+                // 4. Captura de regras não atendidas
+                javax.swing.JOptionPane.showMessageDialog(this, "Erro ao salvar: " + ex.getMessage());
             }
         });
         panelCadastro.add(btnSalvar);

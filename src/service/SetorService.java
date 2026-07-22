@@ -5,7 +5,7 @@ import thanatosdb.Setor;
 import java.util.List;
 
 public class SetorService {
-    
+
     private SetorDAO setorDAO;
 
     public SetorService() {
@@ -33,5 +33,20 @@ public class SetorService {
 
     public int calcularOcupacao(int idSetor) {
         return setorDAO.getPorcentagemOcupacao(idSetor);
+    }
+
+    // Método de cálculo puro (sem acesso ao banco de dados) 
+    public double calcularPorcentagemOcupacao(int vagasOcupadas, int vagasTotais) throws Exception {
+        if (vagasTotais <= 0) {
+            throw new Exception("A capacidade total do setor deve ser maior que zero.");
+        }
+        if (vagasOcupadas < 0) {
+            throw new Exception("O número de vagas ocupadas não pode ser negativo.");
+        }
+        if (vagasOcupadas > vagasTotais) {
+            throw new Exception("O número de vagas ocupadas não pode exceder a capacidade total.");
+        }
+
+        return ((double) vagasOcupadas / vagasTotais) * 100.0;
     }
 }
